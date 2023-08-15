@@ -97,6 +97,7 @@ func ValidateSubdomains (resp string) map[int]string {
 
 	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedDomains)))
 	return ValidatedDomains
+	
 
 
 }
@@ -131,6 +132,6 @@ func main() {
 	ValidatedDomains := ValidateSubdomains(resp)
 	fmt.Println(ValidatedDomains)
 
-	
+
 
 }
