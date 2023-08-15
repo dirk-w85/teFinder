@@ -7,10 +7,8 @@ import (
 	"log"
 	"net/http"
 	"bytes"
-	//	"os"
 	"strings"
-	//"flag"
-	//	"time"
+	"flag"
 	"github.com/spf13/viper"
 	"strconv"
 )
@@ -121,13 +119,10 @@ func PostRequest(url string, teToken string, newTestString string) {
 	}
 	defer resp.Body.Close()
 
-	//body, err := ioutil.ReadAll(resp.Body)
 	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//fmt.Println(resp.Status)
-	//fmt.Println(string(body))
 }
 
 func ValidateSubdomains (resp string) map[int]string {
@@ -153,7 +148,6 @@ func ValidateSubdomains (resp string) map[int]string {
 }
 
 func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgentLabels string) {
-	//fmt.Println(teAgentLabels)
 	var labels Label
 	var labelDetails LabelDetails
 	var labelID int = 0
@@ -170,8 +164,6 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 
 	for index, _ := range labels.Groups {
 		if strings.Contains(labels.Groups[index].Name, teAgentLabels){
-			//fmt.Println(labels.Groups[index].Name)
-			//fmt.Println(labels.Groups[index].GroupID)
 			labelID = labels.Groups[index].GroupID
 		}
 	}
@@ -198,7 +190,6 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 		fmt.Println(err)
 	}
 
-	//fmt.Println(agentIDs)
 	var testExists = false
 
 	for index, _ := range ValidatedSubDomains {
@@ -206,18 +197,14 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 		Logger("Checking if Test exists: Servicefinder - https://"+ValidatedSubDomains[index])
 
 		for index2, _ := range existingTests.Test {
-			//fmt.Println("Existing: "+existingTests.Test[index2].TestName)
-			//fmt.Println("New: Servicefinder - https://"+ValidatedSubDomains[index])
-
 			if existingTests.Test[index2].TestName == "Servicefinder - https://"+ValidatedSubDomains[index]{
 				Logger("Tests exists already!")
 				testExists = true
 			}
 		}
 
-		//fmt.Println(testExists)
-
 		if testExists == false {
+			Logger("Tests does not exists - Creating!")
 			newTestString := `{"testName":"Servicefinder - https://`+ValidatedSubDomains[index]+`","agents":[`
 			
 			for index, _ := range labelDetails.Groups[0].Agents {
@@ -230,20 +217,8 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 			//fmt.Println(newTestString)
 
 			PostRequest("https://api.thousandeyes.com/v6/tests/http-server/new.json", teOauthToken, newTestString)
-		}
-		
+		}		
 	}
-
-	
-
-
-
-
-
-
-
-
-
 }
 
 //------------------------------------
@@ -267,6 +242,12 @@ func main() {
 	//var teAgentLabels = viper.GetStringMapString("thousandeyes.agentLabels")
 	var teAgentLabels string = "Servicefinder"
 
+
+	domaingPtr := flag.String("domain","cisco.com","Domain to be checked")
+	flag.Parse()
+
+	teDomain = *domaingPtr
+
 	Logger("ThousandEyes Oauth Token: " + teOauthToken)
 	Logger("ThousandEyes User: " + teUser)
 	Logger("Domain of Interest: " + teDomain)
@@ -276,7 +257,6 @@ func main() {
 
 	Logger("Validating Sub-Domains")
 	ValidatedSubDomains := ValidateSubdomains(resp)
-	//fmt.Println(ValidatedSubDomains)
 
 	CreateTests(ValidatedSubDomains, teOauthToken, teAgentLabels)
 
