@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"bytes"
 	//	"os"
 	"strings"
 	//"flag"
@@ -18,15 +19,57 @@ type Domain struct {
 	Subdomains []string `json:"subdomains"`
 }
 
-type AccountGroups struct {
-	AccountGroups []struct {
-		AccountGroupName string `json:"accountGroupName"`
-		Aid              int    `json:"aid"`
-		OrganizationName string `json:"organizationName"`
-		Current          int    `json:"current"`
-		Default          int    `json:"default"`
-	} `json:"accountGroups"`
+type Label struct {
+	Groups []struct {
+		Name    string `json:"name"`
+		GroupID int    `json:"groupId"`
+		Type    string `json:"type"`
+		Builtin int    `json:"builtin"`
+	} `json:"groups"`
 }
+
+	
+type LabelDetails struct {
+	Groups []struct {
+		Name    string `json:"name"`
+		GroupID int    `json:"groupId"`
+		Type    string `json:"type"`
+		Builtin int    `json:"builtin"`
+		Agents  []struct {
+			AgentID     int      `json:"agentId"`
+			AgentName   string   `json:"agentName"`
+			AgentType   string   `json:"agentType"`
+			CountryID   string   `json:"countryId"`
+			TargetOnly  int      `json:"targetOnly"`
+			IPAddresses []string `json:"ipAddresses"`
+			Location    string   `json:"location"`
+			Ipv6Policy  string   `json:"ipv6Policy"`
+		} `json:"agents"`
+	} `json:"groups"`
+}
+
+type Tests struct {
+	Test []struct {
+		Enabled             int    `json:"enabled"`
+		TestID              int    `json:"testId"`
+		TestName            string `json:"testName"`
+		Interval            int    `json:"interval"`
+		URL                 string `json:"url"`
+		ModifiedDate        string `json:"modifiedDate"`
+		NetworkMeasurements int    `json:"networkMeasurements"`
+		CreatedBy           string `json:"createdBy"`
+		ModifiedBy          string `json:"modifiedBy"`
+		CreatedDate         string `json:"createdDate"`
+	} `json:"test"`
+}
+
+type NewHttpServerTest struct {
+	Agents 					[]string
+	Interval 				int
+	Url						string
+}
+
+
 
 func Logger(msg string) {
 	if viper.GetBool("global.debug") {
@@ -57,30 +100,46 @@ func GetRequest(url string, teToken string) string {
 	return string(body)
 }
 
-func GetAID(resp string) string {
-	var teAccountGroups AccountGroups
-	var aid = 0
+func PostRequest(url string, teToken string, jsonData []byte) {
 
-	err := json.Unmarshal([]byte(resp), &teAccountGroups)
+	jsonData = []byte(`{ "interval": 300,
+				"agents": [{"agentId": 58}],
+				"testName": "Servicefinder - https://deepc.com",
+				"server": "https://deepc.com",
+				"port": 443,
+				"alertsEnabled": 0
+			  }`)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println(err)
-	}
-	for index, _ := range teAccountGroups.AccountGroups {
-		if teAccountGroups.AccountGroups[index].Default == 1 {
-			aid = teAccountGroups.AccountGroups[index].Aid
-		}
-	}
-	if aid == 0 {
-		panic(fmt.Errorf("Fatal error - AID wrong\n"))
+		log.Fatalln(err)
 	}
 
-	return strconv.Itoa(aid)
+	req.Header.Set("Authorization", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+teToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(resp.Status)
+	fmt.Println(string(body))
 }
+
+
 
 func ValidateSubdomains (resp string) map[int]string {
 	var domains Domain
 	var teOauthToken = "1"
-	ValidatedDomains := make(map[int]string)
+	ValidatedSubDomains := make(map[int]string)
 
 	err := json.Unmarshal([]byte(resp), &domains)
 	if err != nil {
@@ -91,13 +150,101 @@ func ValidateSubdomains (resp string) map[int]string {
 		resp = GetRequest(viper.GetString("thousandeyes.validateUrl")+domains.Subdomains[index], teOauthToken)
 
 		if strings.Contains(resp, "true"){
-			ValidatedDomains[index] = domains.Subdomains[index]
+			ValidatedSubDomains[index] = domains.Subdomains[index]
 		}		
 	}
 
-	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedDomains)))
-	return ValidatedDomains
+	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedSubDomains)))
+	return ValidatedSubDomains
+}
+
+func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgentLabels string) {
+	//fmt.Println(teAgentLabels)
+	var labels Label
+	var labelDetails LabelDetails
+	var labelID int = 0
+	var agentIDs = make(map[int]int)
+	var existingTests Tests
+
+	resp := GetRequest("https://api.thousandeyes.com/v6/groups.json", teOauthToken)
 	
+	err := json.Unmarshal([]byte(resp), &labels)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for index, _ := range labels.Groups {
+		if strings.Contains(labels.Groups[index].Name, teAgentLabels){
+			//fmt.Println(labels.Groups[index].Name)
+			//fmt.Println(labels.Groups[index].GroupID)
+			labelID = labels.Groups[index].GroupID
+		}
+	}
+
+	Logger("Label ID is: "+strconv.Itoa(labelID))
+
+	resp = GetRequest("https://api.thousandeyes.com/v6/groups/"+strconv.Itoa(labelID)+".json", teOauthToken)
+
+	err = json.Unmarshal([]byte(resp), &labelDetails)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	Logger("Label has "+strconv.Itoa(len(labelDetails.Groups[0].Agents))+" Agents")
+	for index, _ := range labelDetails.Groups[0].Agents {
+		agentIDs[index] = labelDetails.Groups[0].Agents[index].AgentID
+	}
+
+	Logger("Getting existing HTTP-Server Tests")
+	resp = GetRequest("https://api.thousandeyes.com/v6/tests/http-server.json", teOauthToken)
+
+	err = json.Unmarshal([]byte(resp), &existingTests)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	//fmt.Println(agentIDs)
+	var testExists = false
+
+	for index, _ := range ValidatedSubDomains {
+		testExists = false
+		Logger("Checking if Test exists: Servicefinder - https://"+ValidatedSubDomains[index])
+
+		for index, _ := range existingTests.Test {
+			//fmt.Println(existingTests.Test[index].TestName)
+
+			if existingTests.Test[index].TestName == "Servicefinder - https://"+ValidatedSubDomains[index]{
+				Logger("Tests exists already!")
+				testExists = true
+			}
+		}
+
+		fmt.Println(testExists)
+
+		if testExists == false {
+			var jsonData = []byte(`{ "interval": 300,
+				"agents": [
+				  {"agentId": 58}
+				],
+				"testName": Servicefinder - https://deepc.com,
+				"server": "https://deepc.com",
+				"port": 443,
+				"alertsEnabled": 0
+			  }`)
+
+			  PostRequest("https://api.thousandeyes.com/v6/tests/agent-to-server/new.json", teOauthToken, jsonData)
+		}
+		
+	}
+
+	
+
+
+
+
+
+
+
 
 
 }
@@ -120,6 +267,8 @@ func main() {
 	var teOauthToken = viper.GetString("thousandeyes.oauthToken")
 	var teUser = viper.GetString("thousandeyes.user")
 	var teDomain = viper.GetString("thousandeyes.domain")
+	//var teAgentLabels = viper.GetStringMapString("thousandeyes.agentLabels")
+	var teAgentLabels string = "Servicefinder"
 
 	Logger("ThousandEyes Oauth Token: " + teOauthToken)
 	Logger("ThousandEyes User: " + teUser)
@@ -129,9 +278,9 @@ func main() {
 	resp := GetRequest(viper.GetString("thousandeyes.serviceUrl")+teDomain, teOauthToken)
 
 	Logger("Validating Sub-Domains")
-	ValidatedDomains := ValidateSubdomains(resp)
-	fmt.Println(ValidatedDomains)
+	ValidatedSubDomains := ValidateSubdomains(resp)
+	//fmt.Println(ValidatedSubDomains)
 
-
+	CreateTests(ValidatedSubDomains, teOauthToken, teAgentLabels)
 
 }
