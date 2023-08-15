@@ -64,12 +64,13 @@ type Tests struct {
 }
 
 type NewHttpServerTest struct {
-	Agents 					[]string
+	TestName				string
+	Agents 					[]struct {
+		AgentID 			int `json:"agentId"`
+	}
 	Interval 				int
 	Url						string
 }
-
-
 
 func Logger(msg string) {
 	if viper.GetBool("global.debug") {
@@ -100,15 +101,9 @@ func GetRequest(url string, teToken string) string {
 	return string(body)
 }
 
-func PostRequest(url string, teToken string, jsonData []byte) {
+func PostRequest(url string, teToken string, newTestString string) {
 
-	jsonData = []byte(`{ "interval": 300,
-				"agents": [{"agentId": 58}],
-				"testName": "Servicefinder - https://deepc.com",
-				"server": "https://deepc.com",
-				"port": 443,
-				"alertsEnabled": 0
-			  }`)
+	jsonData := []byte(newTestString)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
@@ -116,7 +111,7 @@ func PostRequest(url string, teToken string, jsonData []byte) {
 		log.Fatalln(err)
 	}
 
-	req.Header.Set("Authorization", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+teToken)
 
@@ -126,15 +121,14 @@ func PostRequest(url string, teToken string, jsonData []byte) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	//body, err := ioutil.ReadAll(resp.Body)
+	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(resp.Status)
-	fmt.Println(string(body))
+	//fmt.Println(resp.Status)
+	//fmt.Println(string(body))
 }
-
-
 
 func ValidateSubdomains (resp string) map[int]string {
 	var domains Domain
@@ -165,6 +159,7 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 	var labelID int = 0
 	var agentIDs = make(map[int]int)
 	var existingTests Tests
+	//var newTest NewHttpServerTest
 
 	resp := GetRequest("https://api.thousandeyes.com/v6/groups.json", teOauthToken)
 	
@@ -210,29 +205,31 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 		testExists = false
 		Logger("Checking if Test exists: Servicefinder - https://"+ValidatedSubDomains[index])
 
-		for index, _ := range existingTests.Test {
-			//fmt.Println(existingTests.Test[index].TestName)
+		for index2, _ := range existingTests.Test {
+			//fmt.Println("Existing: "+existingTests.Test[index2].TestName)
+			//fmt.Println("New: Servicefinder - https://"+ValidatedSubDomains[index])
 
-			if existingTests.Test[index].TestName == "Servicefinder - https://"+ValidatedSubDomains[index]{
+			if existingTests.Test[index2].TestName == "Servicefinder - https://"+ValidatedSubDomains[index]{
 				Logger("Tests exists already!")
 				testExists = true
 			}
 		}
 
-		fmt.Println(testExists)
+		//fmt.Println(testExists)
 
 		if testExists == false {
-			var jsonData = []byte(`{ "interval": 300,
-				"agents": [
-				  {"agentId": 58}
-				],
-				"testName": Servicefinder - https://deepc.com,
-				"server": "https://deepc.com",
-				"port": 443,
-				"alertsEnabled": 0
-			  }`)
+			newTestString := `{"testName":"Servicefinder - https://`+ValidatedSubDomains[index]+`","agents":[`
+			
+			for index, _ := range labelDetails.Groups[0].Agents {
+				newTestString = newTestString+`{"agentId":`+strconv.Itoa(labelDetails.Groups[0].Agents[index].AgentID)+`},`
+			}
+			newTestString = strings.TrimRight(newTestString, ",")
 
-			  PostRequest("https://api.thousandeyes.com/v6/tests/agent-to-server/new.json", teOauthToken, jsonData)
+			newTestString = newTestString+`],"interval":120,"url":"https://`+ValidatedSubDomains[index]+`"}`
+
+			//fmt.Println(newTestString)
+
+			PostRequest("https://api.thousandeyes.com/v6/tests/http-server/new.json", teOauthToken, newTestString)
 		}
 		
 	}
