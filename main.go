@@ -1,19 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"io/ioutil"
-	"encoding/json"
-//	"os"
-//	"strings"
+	//	"os"
+	//	"strings"
 	//"flag"
-//	"time" 
-	"strconv"
+	//	"time"
 	"github.com/spf13/viper"
+	"strconv"
 )
-
 
 type AccountGroups struct {
 	AccountGroups []struct {
@@ -99,19 +98,19 @@ type CloudAgents struct {
 	} `json:"agents"`
 }
 
-func Logger(msg string){
-	if viper.GetBool("global.debug"){
+func Logger(msg string) {
+	if viper.GetBool("global.debug") {
 		log.Println(msg)
 	}
 }
 
-func GetRequest (url string, teToken string) string {
+func GetRequest(url string, teToken string) string {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+teToken)
 
 	resp, err := client.Do(req)
@@ -136,7 +135,7 @@ func GetAID(resp string) string {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for index, _ := range teAccountGroups.AccountGroups {	
+	for index, _ := range teAccountGroups.AccountGroups {
 		if teAccountGroups.AccountGroups[index].Default == 1 {
 			aid = teAccountGroups.AccountGroups[index].Aid
 		}
@@ -156,7 +155,7 @@ func GetEnterpriseAgents(resp string) map[int]int {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for index, _ := range teEnterpriseAgents.Agents {	
+	for index, _ := range teEnterpriseAgents.Agents {
 		if teEnterpriseAgents.Agents[index].Enabled == 1 {
 			EnterpriseAgentList[index] = teEnterpriseAgents.Agents[index].AgentID
 		}
@@ -172,7 +171,7 @@ func GetEnterpriseAgentsCluster(resp string) map[int]int {
 	if err != nil {
 		fmt.Println(err)
 	}
-	for index, _ := range teEnterpriseAgentClusters.Agents {	
+	for index, _ := range teEnterpriseAgentClusters.Agents {
 		if teEnterpriseAgentClusters.Agents[index].Enabled == 1 {
 			EnterpriseAgentClusterList[index] = teEnterpriseAgentClusters.Agents[index].AgentID
 		}
@@ -189,21 +188,22 @@ func GetCloudAgents(resp string) map[int]int {
 		fmt.Println(err)
 	}
 
-	for index, _ := range teCloudAgents.Agents {	
+	for index, _ := range teCloudAgents.Agents {
 		//if teCloudAgents.Agents[index].Enabled == 1 {
-			CloudAgentList[index] = teCloudAgents.Agents[index].AgentID
+		CloudAgentList[index] = teCloudAgents.Agents[index].AgentID
 		//}
 	}
 	return CloudAgentList
 }
+
 //------------------------------------
 
-func main()  {
+func main() {
 	viper.SetConfigName("config") // name of config file (without extension)
-	viper.SetConfigType("toml") // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath(".")               // optionally look for config in the working directory
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil { // Handle errors reading the config file
+	viper.SetConfigType("toml")   // REQUIRED if the config file does not have the extension in the name
+	viper.AddConfigPath(".")      // optionally look for config in the working directory
+	err := viper.ReadInConfig()   // Find and read the config file
+	if err != nil {               // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %w \n", err))
 	}
 
@@ -214,24 +214,24 @@ func main()  {
 	var teOauthToken = viper.GetString("thousandeyes.oauthToken")
 	var teUser = viper.GetString("thousandeyes.user")
 
-	Logger("ThousandEyes Oauth Token: "+teOauthToken)
-	Logger("ThousandEyes User: "+teUser)
+	Logger("ThousandEyes Oauth Token: " + teOauthToken)
+	Logger("ThousandEyes User: " + teUser)
 
 	Logger("Getting ThousandEyes Account Group Details")
-	resp := GetRequest ("https://api.thousandeyes.com/v6/account-groups.json", teOauthToken) 
+	resp := GetRequest("https://api.thousandeyes.com/v6/account-groups.json", teOauthToken)
 
 	teAID := GetAID(resp)
-	Logger("Getting ThousandEyes Account Group ID: "+teAID)
+	Logger("Getting ThousandEyes Account Group ID: " + teAID)
 
-	resp = GetRequest ("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE", teOauthToken)
+	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE", teOauthToken)
 	EnterpriseAgentList := GetEnterpriseAgents(resp)
-	Logger("Enabled Enterprise Agents found: "+strconv.Itoa(len(EnterpriseAgentList)))
+	Logger("Enabled Enterprise Agents found: " + strconv.Itoa(len(EnterpriseAgentList)))
 
-	resp = GetRequest ("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE_CLUSTER", teOauthToken)
+	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE_CLUSTER", teOauthToken)
 	EnterpriseAgentClusterList := GetEnterpriseAgentsCluster(resp)
-	Logger("Enabled Enterprise Agent Clusters found: "+strconv.Itoa(len(EnterpriseAgentClusterList)))
+	Logger("Enabled Enterprise Agent Clusters found: " + strconv.Itoa(len(EnterpriseAgentClusterList)))
 
-	resp = GetRequest ("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=CLOUD", teOauthToken)
+	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=CLOUD", teOauthToken)
 	CloudAgentList := GetCloudAgents(resp)
-	Logger("Used Cloud Agents found: "+strconv.Itoa(len(CloudAgentList)))
+	Logger("Used Cloud Agents found: " + strconv.Itoa(len(CloudAgentList)))
 }
