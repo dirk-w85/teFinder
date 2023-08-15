@@ -1,0 +1,9 @@
+# Global Settings
+[global]
+debug = true
+interval = 60
+
+# ThousandEyes Settings
+[thousandeyes]
+user = "dwoellha@thousandeyes.com"
+oauthToken = "ce0c19fe-71d1-4f2a-8723-2176db039fbf"
