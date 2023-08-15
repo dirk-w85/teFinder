@@ -126,11 +126,11 @@ func main() {
 
 	Logger("Getting Sub-Domains")
 	resp := GetRequest(viper.GetString("thousandeyes.serviceUrl")+teDomain, teOauthToken)
-	
-	//fmt.Println(resp)
 
 	Logger("Validating Sub-Domains")
 	ValidatedDomains := ValidateSubdomains(resp)
 	fmt.Println(ValidatedDomains)
+
+	
 
 }
