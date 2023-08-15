@@ -7,12 +7,16 @@ import (
 	"log"
 	"net/http"
 	//	"os"
-	//	"strings"
+	"strings"
 	//"flag"
 	//	"time"
 	"github.com/spf13/viper"
 	"strconv"
 )
+
+type Domain struct {
+	Subdomains []string `json:"subdomains"`
+}
 
 type AccountGroups struct {
 	AccountGroups []struct {
@@ -22,80 +26,6 @@ type AccountGroups struct {
 		Current          int    `json:"current"`
 		Default          int    `json:"default"`
 	} `json:"accountGroups"`
-}
-
-type Agents struct {
-	Agents []struct {
-		AgentID               int      `json:"agentId"`
-		AgentName             string   `json:"agentName"`
-		AgentType             string   `json:"agentType"`
-		CountryID             string   `json:"countryId"`
-		Enabled               int      `json:"enabled"`
-		KeepBrowserCache      int      `json:"keepBrowserCache"`
-		VerifySslCertificates int      `json:"verifySslCertificates"`
-		IPAddresses           []string `json:"ipAddresses"`
-		InterfaceIPMapping    []struct {
-			InterfaceName string   `json:"interfaceName"`
-			IPAddresses   []string `json:"ipAddresses"`
-		} `json:"interfaceIpMapping"`
-		LastSeen          string   `json:"lastSeen"`
-		Location          string   `json:"location"`
-		Network           string   `json:"network"`
-		Prefix            string   `json:"prefix"`
-		PublicIPAddresses []string `json:"publicIpAddresses"`
-		TargetForTests    string   `json:"targetForTests"`
-		AgentState        string   `json:"agentState"`
-		Ipv6Policy        string   `json:"ipv6Policy"`
-		Hostname          string   `json:"hostname"`
-		CreatedDate       string   `json:"createdDate"`
-		ErrorDetails      []any    `json:"errorDetails"`
-	} `json:"agents"`
-}
-
-type Agent struct {
-	AgentID int `json:"agentId"`
-	Enabled int `json:"enabled"`
-}
-
-type Clusters struct {
-	Agents []struct {
-		AgentID        int    `json:"agentId"`
-		AgentName      string `json:"agentName"`
-		AgentType      string `json:"agentType"`
-		ClusterMembers []struct {
-			ErrorDetails []struct {
-				Code        string `json:"code"`
-				Description string `json:"description"`
-			} `json:"errorDetails"`
-			IPAddresses       []string `json:"ipAddresses"`
-			LastSeen          string   `json:"lastSeen"`
-			MemberID          int      `json:"memberId"`
-			Name              string   `json:"name"`
-			Network           string   `json:"network"`
-			Prefix            string   `json:"prefix"`
-			PublicIPAddresses []string `json:"publicIpAddresses"`
-			TargetForTests    string   `json:"targetForTests"`
-			AgentState        string   `json:"agentState"`
-		} `json:"clusterMembers"`
-		CountryID             string `json:"countryId"`
-		Enabled               int    `json:"enabled"`
-		KeepBrowserCache      int    `json:"keepBrowserCache"`
-		VerifySslCertificates int    `json:"verifySslCertificates"`
-		Location              string `json:"location"`
-		Ipv6Policy            string `json:"ipv6Policy"`
-		CreatedDate           string `json:"createdDate"`
-	} `json:"agents"`
-}
-
-type CloudAgents struct {
-	Agents []struct {
-		AgentID     int      `json:"agentId"`
-		AgentName   string   `json:"agentName"`
-		AgentType   string   `json:"agentType"`
-		CountryID   string   `json:"countryId"`
-		IPAddresses []string `json:"ipAddresses"`
-		Location    string   `json:"location"`
-	} `json:"agents"`
 }
 
 func Logger(msg string) {
@@ -147,53 +77,28 @@ func GetAID(resp string) string {
 	return strconv.Itoa(aid)
 }
 
-func GetEnterpriseAgents(resp string) map[int]int {
-	var teEnterpriseAgents Agents
-	EnterpriseAgentList := make(map[int]int)
+func ValidateSubdomains (resp string) map[int]string {
+	var domains Domain
+	var teOauthToken = "1"
+	ValidatedDomains := make(map[int]string)
 
-	err := json.Unmarshal([]byte(resp), &teEnterpriseAgents)
-	if err != nil {
-		fmt.Println(err)
-	}
-	for index, _ := range teEnterpriseAgents.Agents {
-		if teEnterpriseAgents.Agents[index].Enabled == 1 {
-			EnterpriseAgentList[index] = teEnterpriseAgents.Agents[index].AgentID
-		}
-	}
-	return EnterpriseAgentList
-}
-
-func GetEnterpriseAgentsCluster(resp string) map[int]int {
-	var teEnterpriseAgentClusters Clusters
-	EnterpriseAgentClusterList := make(map[int]int)
-
-	err := json.Unmarshal([]byte(resp), &teEnterpriseAgentClusters)
-	if err != nil {
-		fmt.Println(err)
-	}
-	for index, _ := range teEnterpriseAgentClusters.Agents {
-		if teEnterpriseAgentClusters.Agents[index].Enabled == 1 {
-			EnterpriseAgentClusterList[index] = teEnterpriseAgentClusters.Agents[index].AgentID
-		}
-	}
-	return EnterpriseAgentClusterList
-}
-
-func GetCloudAgents(resp string) map[int]int {
-	var teCloudAgents CloudAgents
-	CloudAgentList := make(map[int]int)
-
-	err := json.Unmarshal([]byte(resp), &teCloudAgents)
+	err := json.Unmarshal([]byte(resp), &domains)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	for index, _ := range teCloudAgents.Agents {
-		//if teCloudAgents.Agents[index].Enabled == 1 {
-		CloudAgentList[index] = teCloudAgents.Agents[index].AgentID
-		//}
+	for index, _ := range domains.Subdomains {
+		resp = GetRequest(viper.GetString("thousandeyes.validateUrl")+domains.Subdomains[index], teOauthToken)
+
+		if strings.Contains(resp, "true"){
+			ValidatedDomains[index] = domains.Subdomains[index]
+		}		
 	}
-	return CloudAgentList
+
+	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedDomains)))
+	return ValidatedDomains
+
+
 }
 
 //------------------------------------
@@ -213,25 +118,19 @@ func main() {
 
 	var teOauthToken = viper.GetString("thousandeyes.oauthToken")
 	var teUser = viper.GetString("thousandeyes.user")
+	var teDomain = viper.GetString("thousandeyes.domain")
 
 	Logger("ThousandEyes Oauth Token: " + teOauthToken)
 	Logger("ThousandEyes User: " + teUser)
+	Logger("Domain of Interest: " + teDomain)
 
-	Logger("Getting ThousandEyes Account Group Details")
-	resp := GetRequest("https://api.thousandeyes.com/v6/account-groups.json", teOauthToken)
+	Logger("Getting Sub-Domains")
+	resp := GetRequest(viper.GetString("thousandeyes.serviceUrl")+teDomain, teOauthToken)
+	
+	//fmt.Println(resp)
 
-	teAID := GetAID(resp)
-	Logger("Getting ThousandEyes Account Group ID: " + teAID)
+	Logger("Validating Sub-Domains")
+	ValidatedDomains := ValidateSubdomains(resp)
+	fmt.Println(ValidatedDomains)
 
-	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE", teOauthToken)
-	EnterpriseAgentList := GetEnterpriseAgents(resp)
-	Logger("Enabled Enterprise Agents found: " + strconv.Itoa(len(EnterpriseAgentList)))
-
-	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=ENTERPRISE_CLUSTER", teOauthToken)
-	EnterpriseAgentClusterList := GetEnterpriseAgentsCluster(resp)
-	Logger("Enabled Enterprise Agent Clusters found: " + strconv.Itoa(len(EnterpriseAgentClusterList)))
-
-	resp = GetRequest("https://api.thousandeyes.com/v6/agents.json?aid="+teAID+"&agentTypes=CLOUD", teOauthToken)
-	CloudAgentList := GetCloudAgents(resp)
-	Logger("Used Cloud Agents found: " + strconv.Itoa(len(CloudAgentList)))
 }
