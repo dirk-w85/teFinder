@@ -39,3 +39,4 @@ jobs:
       with:
         prerelease: true
         files: teFinder
+        tag_name: "pre-latest"
