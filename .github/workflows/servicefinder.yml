@@ -10,12 +10,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+    
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
         check-latest: true
 
-    - name: Run the Code
+    - name: Run the Code and add Tests to ThousandEyes
       run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }}
