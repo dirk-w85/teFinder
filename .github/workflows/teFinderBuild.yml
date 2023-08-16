@@ -6,6 +6,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  VERSION: v0.1
   
 jobs:
 
@@ -25,21 +28,21 @@ jobs:
       run: go get .
 
     - name: Run ID
-      run: echo "${GITHUB_RUN_ID}"
+      run: echo "$VERSION"
 
     - name: Build exectuable
-      run: go build -o teFinder-"${GITHUB_RUN_ID}" main.go
+      run: go build -o teFinder-$VERSION main.go
 
     - name: Upload Executable as Artifact
       uses: actions/upload-artifact@v3
       with:
         name: teFinder-artifact
-        path: teFinder-"${GITHUB_RUN_ID}"
+        path: teFinder-$VERSION
     
     - name: Release
       uses: softprops/action-gh-release@v1
     #  if: startsWith(github.ref, 'refs/tags/')
       with:
         prerelease: true
-        files: teFinder-"${GITHUB_RUN_ID}"
+        files: teFinder-$VERSION
         tag_name: "pre-latest"
