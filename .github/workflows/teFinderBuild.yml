@@ -1,0 +1,31 @@
+name: Build teFinder Executable
+
+on:
+  push:
+    branches: [ "main" ]
+  
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+        check-latest: true
+
+    - name: Install dependencies
+      run: go get .
+
+    - name: Build exectuable
+      run: go build -o teFinder main.go
+
+    - name: Upload Executable as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: teFinder-artifact
+        path: teFinder
