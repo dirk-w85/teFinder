@@ -25,18 +25,18 @@ jobs:
       run: go get .
 
     - name: Build exectuable
-      run: go build -o teFinder-${{ env.GITHUB_RUN_ID }} main.go
+      run: go build -o teFinder-${ GITHUB_RUN_ID } main.go
 
     - name: Upload Executable as Artifact
       uses: actions/upload-artifact@v3
       with:
         name: teFinder-artifact
-        path: teFinder-${{ env.GITHUB_RUN_ID }}
+        path: teFinder-${ GITHUB_RUN_ID }
     
     - name: Release
       uses: softprops/action-gh-release@v1
     #  if: startsWith(github.ref, 'refs/tags/')
       with:
         prerelease: true
-        files: teFinder-${{ env.GITHUB_RUN_ID }}
+        files: teFinder-${ GITHUB_RUN_ID }
         tag_name: "pre-latest"
