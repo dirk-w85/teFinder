@@ -3,7 +3,7 @@ name: Servicefinder
 on: 
   workflow_dispatch:
     inputs: 
-      domain: "hahn-group.de"
+      domain: 
 
 jobs:
 
