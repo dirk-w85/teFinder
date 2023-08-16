@@ -3,6 +3,9 @@ name: Build teFinder Executable
 on:
   push:
     branches: [ "main" ]
+
+permissions:
+  contents: write
   
 jobs:
 
@@ -29,3 +32,10 @@ jobs:
       with:
         name: teFinder-artifact
         path: teFinder
+    
+    - name: Release
+      uses: softprops/action-gh-release@v1
+    #  if: startsWith(github.ref, 'refs/tags/')
+       with:
+         prerelease: true
+         files: teFinder
