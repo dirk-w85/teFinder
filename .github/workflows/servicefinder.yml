@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
     inputs: 
       domain: 
+        required: true
+        type: string
 
 jobs:
 
