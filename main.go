@@ -236,20 +236,31 @@ func main() {
 		Logger("Debugging enabled")
 	}
 
-	var teOauthToken = viper.GetString("thousandeyes.oauthToken")
-	var teUser = viper.GetString("thousandeyes.user")
-	var teDomain = viper.GetString("thousandeyes.domain")
+	//var teOauthToken = viper.GetString("thousandeyes.oauthToken")
+	//var teUser = viper.GetString("thousandeyes.user")
+	//var teDomain = viper.GetString("thousandeyes.domain")
 	//var teAgentLabels = viper.GetStringMapString("thousandeyes.agentLabels")
 	var teAgentLabels string = "Servicefinder"
 
 
-	domaingPtr := flag.String("domain","cisco.com","Domain to be checked")
+	domaingPtr := flag.String("domain","none","Domain to be checked")
+	teTokenPtr := flag.String("token","none","ThousandEyes oAuth Token")
+
 	flag.Parse()
 
-	teDomain = *domaingPtr
+	teDomain := *domaingPtr
+	teOauthToken := *teTokenPtr
+
+	if teDomain == "none" {               
+		panic(fmt.Errorf("No Domain specified"))
+	}
+
+	if teOauthToken == "none" {               
+		panic(fmt.Errorf("No oAuth Token specified"))
+	}
 
 	Logger("ThousandEyes Oauth Token: " + teOauthToken)
-	Logger("ThousandEyes User: " + teUser)
+	//Logger("ThousandEyes User: " + teUser)
 	Logger("Domain of Interest: " + teDomain)
 
 	Logger("Getting Sub-Domains")
