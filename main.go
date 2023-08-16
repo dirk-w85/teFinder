@@ -11,7 +11,7 @@ import (
 	"flag"
 	"github.com/spf13/viper"
 	"strconv"
-)
+) 
 
 type Domain struct {
 	Subdomains []string `json:"subdomains"`
