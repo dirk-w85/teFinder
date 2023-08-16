@@ -1,4 +1,4 @@
-name: Build teFinder Executable
+name: teFinder
 
 on:
   push:
