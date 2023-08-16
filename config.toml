@@ -5,9 +5,6 @@ interval = 60
 
 # ThousandEyes Settings
 [thousandeyes]
-user = "user@thousandeyes.com"
-oauthToken = "ce0c19fe-asdv-4f2a-8723-2176db039fbf"
 serviceUrl = "https://servicefinder.thousandeyes.com/retrieve-subdomains?domain="
 validateUrl = "https://servicefinder.thousandeyes.com/valid-subdomain?subdomain="
-domain = ""
 agentLabels = ["Servicefinder"]
