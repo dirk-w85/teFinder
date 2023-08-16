@@ -31,18 +31,18 @@ jobs:
       run: echo "$VERSION"
 
     - name: Build exectuable
-      run: go build -o teFinder-$VERSION main.go
+      run: go build -o teFinder-${{ env.VERSION }} main.go
 
     - name: Upload Executable as Artifact
       uses: actions/upload-artifact@v3
       with:
         name: teFinder-artifact
-        path: teFinder-$VERSION
+        path: teFinder-${{ env.VERSION }}
     
     - name: Release
       uses: softprops/action-gh-release@v1
     #  if: startsWith(github.ref, 'refs/tags/')
       with:
         prerelease: true
-        files: teFinder-$VERSION
+        files: teFinder-${{ env.VERSION }}
         tag_name: "pre-latest"
