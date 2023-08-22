@@ -12,8 +12,8 @@ on:
         type: choice
         options:
         - HTTP-Server
-        - Page-Load
-        - Agent-to-Server
+        #- Page-Load
+        #- Agent-to-Server
         default: "HTTP-Server"
         description: "Desired Test-Type"
 
