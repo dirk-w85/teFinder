@@ -6,7 +6,7 @@ on:
       domain: 
         required: true
         type: string
-        description: "Domain to investigate"
+        description: "Domain to investigate (like cisco.com)"
       testType: 
         required: true
         type: choice
