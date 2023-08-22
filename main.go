@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"strings"
 	"flag"
-	"github.com/spf13/viper"
 	"strconv"
 ) 
 
@@ -70,8 +69,8 @@ type NewHttpServerTest struct {
 	Url						string
 }
 
-func Logger(msg string) {
-	if viper.GetBool("global.debug") {
+func Logger(msg string, debugEnabled bool) {
+	if debugEnabled {
 		log.Println(msg)
 	}
 }
@@ -125,7 +124,7 @@ func PostRequest(url string, teToken string, newTestString string) {
 	}
 }
 
-func ValidateSubdomains (resp string) map[int]string {
+func ValidateSubdomains (resp string, validateUrl string, debugEnabled bool) map[int]string {
 	var domains Domain
 	var teOauthToken = "1"
 	ValidatedSubDomains := make(map[int]string)
@@ -135,19 +134,21 @@ func ValidateSubdomains (resp string) map[int]string {
 		fmt.Println(err)
 	}
 
+	Logger("Sub-Domains to validate: "+strconv.Itoa(len(domains.Subdomains)),debugEnabled)
+
 	for index, _ := range domains.Subdomains {
-		resp = GetRequest(viper.GetString("thousandeyes.validateUrl")+domains.Subdomains[index], teOauthToken)
+		resp = GetRequest(validateUrl+domains.Subdomains[index], teOauthToken)
 
 		if strings.Contains(resp, "true"){
 			ValidatedSubDomains[index] = domains.Subdomains[index]
 		}		
 	}
 
-	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedSubDomains)))
+	Logger("Validated Sub-Domains: "+strconv.Itoa(len(ValidatedSubDomains)),debugEnabled)
 	return ValidatedSubDomains
 }
 
-func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgentLabels string) {
+func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgentLabels string,debugEnabled bool) {
 	var labels Label
 	var labelDetails LabelDetails
 	var labelID int = 0
@@ -168,7 +169,7 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 		}
 	}
 
-	Logger("Label ID is: "+strconv.Itoa(labelID))
+	Logger("Label ID is: "+strconv.Itoa(labelID),debugEnabled)
 
 	resp = GetRequest("https://api.thousandeyes.com/v6/groups/"+strconv.Itoa(labelID)+".json", teOauthToken)
 
@@ -177,12 +178,12 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 		fmt.Println(err)
 	}
 
-	Logger("Label has "+strconv.Itoa(len(labelDetails.Groups[0].Agents))+" Agents")
+	Logger("Label has "+strconv.Itoa(len(labelDetails.Groups[0].Agents))+" Agents",debugEnabled)
 	for index, _ := range labelDetails.Groups[0].Agents {
 		agentIDs[index] = labelDetails.Groups[0].Agents[index].AgentID
 	}
 
-	Logger("Getting existing HTTP-Server Tests")
+	Logger("Getting existing HTTP-Server Tests",debugEnabled)
 	resp = GetRequest("https://api.thousandeyes.com/v6/tests/http-server.json", teOauthToken)
 
 	err = json.Unmarshal([]byte(resp), &existingTests)
@@ -194,17 +195,17 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 
 	for index, _ := range ValidatedSubDomains {
 		testExists = false
-		Logger("Checking if Test exists: Servicefinder - https://"+ValidatedSubDomains[index])
+		Logger("Checking if Test exists: Servicefinder - https://"+ValidatedSubDomains[index],debugEnabled)
 
 		for index2, _ := range existingTests.Test {
 			if existingTests.Test[index2].TestName == "Servicefinder - https://"+ValidatedSubDomains[index]{
-				Logger("Tests exists already!")
+				Logger("Tests exists already!",debugEnabled)
 				testExists = true
 			}
 		}
 
 		if testExists == false {
-			Logger("Tests does not exists - Creating!")
+			Logger("Tests does not exists - Creating!",debugEnabled)
 			newTestString := `{"testName":"Servicefinder - https://`+ValidatedSubDomains[index]+`","agents":[`
 			
 			for index, _ := range labelDetails.Groups[0].Agents {
@@ -222,34 +223,29 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 }
 
 //------------------------------------
+// GLOBALS
+var serviceUrl string = "https://servicefinder.thousandeyes.com/retrieve-subdomains?domain="
+var validateUrl string = "https://servicefinder.thousandeyes.com/valid-subdomain?subdomain="
+
+//------------------------------------
 
 func main() {
-	viper.SetConfigName("config") // name of config file (without extension)
-	viper.SetConfigType("toml")   // REQUIRED if the config file does not have the extension in the name
-	viper.AddConfigPath(".")      // optionally look for config in the working directory
-	err := viper.ReadInConfig()   // Find and read the config file
-	if err != nil {               // Handle errors reading the config file
-		panic(fmt.Errorf("Fatal error config file: %w \n", err))
-	}
-
-	if viper.GetBool("global.debug") {
-		Logger("Debugging enabled")
-	}
-
-	//var teOauthToken = viper.GetString("thousandeyes.oauthToken")
-	//var teUser = viper.GetString("thousandeyes.user")
-	//var teDomain = viper.GetString("thousandeyes.domain")
-	//var teAgentLabels = viper.GetStringMapString("thousandeyes.agentLabels")
 	var teAgentLabels string = "Servicefinder"
-
 
 	domaingPtr := flag.String("domain","none","Domain to be checked")
 	teTokenPtr := flag.String("token","none","ThousandEyes oAuth Token")
+	debugPtr := flag.Bool("debug",false,"ThousandEyes oAuth Token")
 
 	flag.Parse()
 
 	teDomain := *domaingPtr
 	teOauthToken := *teTokenPtr
+	debugEnabled := *debugPtr
+
+
+	if debugEnabled {
+		Logger("Debugging enabled", debugEnabled)
+	}
 
 	if teDomain == "none" {               
 		panic(fmt.Errorf("No Domain specified"))
@@ -259,16 +255,16 @@ func main() {
 		panic(fmt.Errorf("No oAuth Token specified"))
 	}
 
-	Logger("ThousandEyes Oauth Token: " + teOauthToken)
+	Logger("ThousandEyes Oauth Token: " + teOauthToken,debugEnabled)
 	//Logger("ThousandEyes User: " + teUser)
-	Logger("Domain of Interest: " + teDomain)
+	Logger("Domain of Interest: " + teDomain,debugEnabled)
 
-	Logger("Getting Sub-Domains")
-	resp := GetRequest(viper.GetString("thousandeyes.serviceUrl")+teDomain, teOauthToken)
+	Logger("Getting Sub-Domains",debugEnabled)
+	resp := GetRequest(serviceUrl+teDomain, teOauthToken)
 
-	Logger("Validating Sub-Domains")
-	ValidatedSubDomains := ValidateSubdomains(resp)
+	Logger("Validating Sub-Domains",debugEnabled)
+	ValidatedSubDomains := ValidateSubdomains(resp,validateUrl,debugEnabled)
 
-	CreateTests(ValidatedSubDomains, teOauthToken, teAgentLabels)
+	CreateTests(ValidatedSubDomains, teOauthToken, teAgentLabels,debugEnabled)
 
 }

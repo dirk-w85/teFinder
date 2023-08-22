@@ -22,4 +22,4 @@ jobs:
         check-latest: true
 
     - name: Run the Code and add Tests to ThousandEyes
-      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }}
+      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -debug=true 
