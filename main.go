@@ -230,10 +230,10 @@ var validateUrl string = "https://servicefinder.thousandeyes.com/valid-subdomain
 //------------------------------------
 
 func main() {
-	var teAgentLabels string = "Servicefinder"
 
 	domaingPtr := flag.String("domain","none","Domain to be checked")
 	teTokenPtr := flag.String("token","none","ThousandEyes oAuth Token")
+	teAgentLabelPtr := flag.String("agentlabel","none","ThousandEyes Agent Label")
 	debugPtr := flag.Bool("debug",false,"ThousandEyes oAuth Token")
 
 	flag.Parse()
@@ -243,12 +243,19 @@ func main() {
 	debugEnabled := *debugPtr
 
 
+	var teAgentLabels string = *teAgentLabelPtr //"Servicefinder"
+
+
 	if debugEnabled {
 		Logger("Debugging enabled", debugEnabled)
 	}
 
 	if teDomain == "none" {               
 		panic(fmt.Errorf("No Domain specified"))
+	}
+
+	if teAgentLabels == "none" {               
+		panic(fmt.Errorf("No Agent Label specified"))
 	}
 
 	if teOauthToken == "none" {               
