@@ -33,4 +33,4 @@ jobs:
         check-latest: true
 
     - name: Run the Code and add Tests to ThousandEyes
-      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicfinder -debug=true 
+      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicefinder -debug=true 
