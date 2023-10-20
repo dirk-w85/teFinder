@@ -43,4 +43,11 @@ jobs:
       with:
         prerelease: true
         files: teFinder-${{ env.VERSION }}
-        tag_name: "pre-latest"
+        tag_name: "v${{ env.VERSION }}"
+    
+    - name: Release Latest
+      uses: softprops/action-gh-release@v1
+      with:
+        prerelease: true
+        files: teFinder-latest
+        tag_name: "latest"
