@@ -23,8 +23,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v3
+    
+#    - name: Checkout Repo
+#      uses: actions/checkout@v3
     
 #    - name: Set up Go
 #      uses: actions/setup-go@v4
@@ -36,7 +37,7 @@ jobs:
 #      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicefinder -debug=true 
 
     - name: Download latest teFinder Executable
-      run: curl -o teFinder https://github.com/dirk-w85/teFinder/releases/download/latest/teFinder
+      run: wget https://github.com/dirk-w85/teFinder/releases/download/latest/teFinder
 
     - name: Directory
       run: ls -la
