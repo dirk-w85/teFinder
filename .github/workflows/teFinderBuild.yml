@@ -32,6 +32,9 @@ jobs:
     - name: Build exectuable
       run: go build -o teFinder-${{ env.VERSION }} main.go
 
+    - name: Build exectuable for latest Tag
+      run: go build -o teFinder-latest main.go
+
     - name: Upload Executable as Artifact
       uses: actions/upload-artifact@v3
       with:
@@ -43,11 +46,11 @@ jobs:
       with:
         prerelease: true
         files: teFinder-${{ env.VERSION }}
-        tag_name: "v${{ env.VERSION }}"
+        tag_name: "${{ env.VERSION }}"
     
     - name: Release Latest
       uses: softprops/action-gh-release@v1
       with:
-        prerelease: true
+        prerelease: false
         files: teFinder-latest
         tag_name: "latest"
