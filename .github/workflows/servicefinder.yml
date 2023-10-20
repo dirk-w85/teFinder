@@ -38,6 +38,9 @@ jobs:
     - name: Download latest teFinder Executable
       run: curl -o teFinder https://github.com/dirk-w85/teFinder/releases/download/latest/teFinder
 
+    - name: Directory
+      run: ls -la
+
     - name: Run the Code and add Tests to ThousandEyes
       run: ./teFinder -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicefinder -debug=true 
 
