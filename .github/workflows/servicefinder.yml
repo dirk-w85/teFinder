@@ -49,5 +49,6 @@ jobs:
       run: ls -la
 
     - name: Run the Code and add Tests to ThousandEyes
-      run: ./teFinder -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicefinder -debug=true 
+      if: ${{ vars.SERVICEFINDERLABEL != '' }}
+      run: ./teFinder -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=${{ vars.SERVICEFINDERLABEL }} -debug=true 
 
