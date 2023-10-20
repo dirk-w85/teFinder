@@ -36,8 +36,11 @@ jobs:
 #    - name: Run the Code and add Tests to ThousandEyes
 #      run: go run main.go -domain=${{ inputs.domain }} -token=${{ secrets.TETOKEN }} -agentlabel=Servicefinder -debug=true 
 
-    - name: Download latest teFinder Executable
-      run: wget https://github.com/dirk-w85/teFinder/releases/download/latest/teFinder
+     - uses: robinraju/release-downloader@v1.8
+       with:
+         repository: "dirk-w85/teFinder"
+         tag: "latest"
+         fileName: "teFinder"
 
     - name: Directory
       run: ls -la
