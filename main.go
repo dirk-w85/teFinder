@@ -88,8 +88,8 @@ func GetRequest(url string, teToken string) string {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("The status code we got is:", resp.StatusCode)
-	
+	//fmt.Println("The status code we got is:", resp.StatusCode)
+
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
