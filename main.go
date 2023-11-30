@@ -224,8 +224,8 @@ func CreateTests(ValidatedSubDomains map[int]string, teOauthToken string, teAgen
 
 //------------------------------------
 // GLOBALS
-var serviceUrl string = "https://servicefinder.thousandeyes.com/retrieve-subdomains?domain="
-var validateUrl string = "https://servicefinder.thousandeyes.com/valid-subdomain?subdomain="
+var serviceUrl string = "https://servicefinder.thousandeyesresearch.com/retrieve-subdomains?domain="
+var validateUrl string = "https://servicefinder.thousandeyesresearch.com/valid-subdomain?subdomain="
 
 //------------------------------------
 
