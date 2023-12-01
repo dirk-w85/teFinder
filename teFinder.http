@@ -1,0 +1,8 @@
+GET https://servicefinder.thousandeyesresearch.com/retrieve-subdomains?domain=weinstadt.de
+
+### Valid Domain
+GET https://servicefinder.thousandeyesresearch.com/valid-subdomain?subdomain=weinstadt.webex.com
+
+
+### Invalid Domain
+GET https://servicefinder.thousandeyesresearch.com/valid-subdomain?subdomain=09df3ae2af9641f69b74ec1d9576d3fc.weinstadt.de

@@ -83,6 +83,7 @@ func GetRequest(url string, teToken string) string {
 	}
 
 	req.Header.Set("Authorization", "Bearer "+teToken)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
 
 	resp, err := client.Do(req)
 	if err != nil {
